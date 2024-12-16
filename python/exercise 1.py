@@ -148,6 +148,7 @@ detailBelanja = "Apel {} x 10000, Jeruk {} x 15000, Anggur {} x 20000"
 print(detailBelanja.format(jmlApel,jmlJeruk,jmlAnggur))
 print("Total: " + str(total) )
 cash = int(input("Masukkan jumlah uang: "))
+print("Uang anda: "+ str(cash))
 if cash > total :
     print("Terima kasih telah berbelanja kembalian anda:"+ str(cash - total))
 elif cash == total :
