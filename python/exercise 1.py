@@ -169,11 +169,11 @@ imt = beratBadan/(tinggiMeter**2)
 
 if imt < 18.5 :
     print("Berat badan kurang")
-elif imt >= 18.5 :
+elif imt >= 18.5 and imt <= 24.9 :
     print("Berat badan ideal")
-elif imt >= 25.0 :
+elif imt >= 25.0 and imt <= 29.9 :
     print("Berat badan berlebih")
-elif imt >= 30.0 :
+elif imt >= 30.0 and imt <= 39.9 :
     print("Berat badan sangat berlebih")
 else :
     print("Obesitas")
