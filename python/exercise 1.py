@@ -95,6 +95,47 @@ print("Usia Budi saat ini:", round(budi_usia))
 print("Usia Andi 2 tahun lagi:", round(andi_usia) + 2)
 print("Usia Budi 2 tahun lagi:", round(budi_usia) + 2)
 
+# nomor 5
+
+d0 = 120 # km
+va = 60 # km/h
+vb = 40 # km/h
+vRel = va + vb # km/h
+waktuJalan = 9 # jam
+
+
+t = d0/vRel # jam
+jamBertemu, menitBertemu = divmod(t * 60,60)
+
+pukulTabrakanJam = waktuJalan + int(jamBertemu)
+pukulTabrakanMenit = int(menitBertemu)
+
+print(f"A dan B akan bertabrakan pukul {pukulTabrakanJam:02D}:{pukulTabrakanMenit:02d} WIB.")
+
+## chatgpt kode
+# Diketahui
+jarak_awal = 120  # km
+kecepatan_a = 60  # km/jam
+kecepatan_b = 40  # km/jam
+waktu_mulai = 9  # Pukul 9:00 WIB
+
+# Hitung kecepatan relatif
+kecepatan_relatif = kecepatan_a + kecepatan_b  # karena saling mendekat
+
+# Hitung waktu bertemu (dalam jam)
+waktu_bertemu = jarak_awal / kecepatan_relatif
+
+# Konversi waktu bertemu ke jam dan menit menggunakan divmod
+jam_bertemu, menit_bertemu = divmod(waktu_bertemu * 60, 60)
+
+# Hitung waktu tabrakan
+pukul_tabrakan_jam = waktu_mulai + int(jam_bertemu)
+pukul_tabrakan_menit = int(menit_bertemu)
+
+# Tampilkan hasil
+print(f"A dan B akan bertabrakan pada pukul {pukul_tabrakan_jam:02d}:{pukul_tabrakan_menit:02d} WIB.")
+
+
 
 
 # nomor 6
@@ -144,17 +185,17 @@ jmlApel = int(input("Masukkan Jumlah Apel: "))
 jmlJeruk = int(input("Masukkan Jumlah Jeruk: "))
 jmlAnggur = int(input("Masukkan Jumlah Anggur"))
 total = (jmlApel*10000) + (jmlJeruk*15000) + (jmlAnggur*20000)
-detailBelanja = "Apel {} x 10000, Jeruk {} x 15000, Anggur {} x 20000"
+detailBelanja = "Apel {} x Rp. 10000, Jeruk {} x Rp. 15000, Anggur {} x Rp. 20000"
 print(detailBelanja.format(jmlApel,jmlJeruk,jmlAnggur))
-print("Total: " + str(total) )
+print("Total: Rp. " + str(total) )
 cash = int(input("Masukkan jumlah uang: "))
-print("Uang anda: "+ str(cash))
+print("Uang anda: Rp. "+ str(cash))
 if cash > total :
     print("Terima kasih telah berbelanja kembalian anda:"+ str(cash - total))
 elif cash == total :
     print("Terima kasih telah berbelanja!")
 else: 
-    print("Transaksi dibatalkan! Uang anda kurang: " + str(total - cash))
+    print("Transaksi dibatalkan! Uang anda kurang: Rp. " + str(total - cash))
 
 
 
