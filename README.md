@@ -1,1 +1,2 @@
-disini tempat balajr saya dan testing testing kode ya kan
+## Belajar/Learning
+Tetap berkembang tetap belajar!
