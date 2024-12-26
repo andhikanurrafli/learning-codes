@@ -64,7 +64,7 @@ while True:
                     print("Mohon maaf pembayaran anda kurang. Harap masukkan jumlah yang sesuai")
                     jumlahKurang = totalHarga - uangDibayar
                     print(f"Jumlah yang kurang: {jumlahKurang}")
-                    uangKurang = int(input("Masukkan "))
+                    uangKurang = int(input("Masukkan pembayaran anda yang kurang: "))
                     kembalian = uangKurang - uangKurang
                     if uangKurang > jumlahKurang:
                         print(f"Pembayaran berhasil! kembalian anda {kembalian}. Selamat menikmati kopi anda.")
