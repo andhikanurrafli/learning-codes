@@ -125,7 +125,8 @@ while True:
     else:
         print("Menu tidak tersedia")
         break
-
+except valueerror:
+  print("Pilihan tidak tersedia mohon masukkan angka")
 
 
 # user input
