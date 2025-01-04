@@ -87,6 +87,20 @@ while True:
         mobMaterialLv1 = int(input("Masukkan jumlah material musuh level 1 yang ada: "))
         if mobMaterialLv3 == mobMaterialLv3Needed or mobMaterialLv2 == mobMaterialLv3Needed * 3 == mobMaterialLv1 / 9:
             print("Material musuh level 3 sudah cukup")
+        elif  mobMaterialLv3 > mobMaterialLv3Needed or mobMaterialLv2 > mobMaterialLv2Needed or mobMaterialLv1 > mobMaterialLv1Needed:
+            mobMaterialLv3Lebih = mobMaterialLv3 - mobMaterialLv3Needed
+            mobMaterialLv2Lebih = mobMaterialLv2 - mobMaterialLv2Needed
+            mobMaterialLv1Lebih = mobMaterialLv1 - mobMaterialLv1Needed
+            print(f"Material musuh level 3 berlebih sebanyak {mobMaterialLv3Lebih}")
+            print(f"Material musuh level 2 berlebih sebanyak {mobMaterialLv2Lebih}")
+            print(f"Material musuh level 1 berlebih sebanyak {mobMaterialLv1Lebih}")
+        else:
+            mobMaterialLv3Kurang = mobMaterialLv3Needed - mobMaterialLv3
+            mobMaterialLv2Kurang = mobMaterialLv2Needed - mobMaterialLv2
+            mobMaterialLv1Kurang = mobMaterialLv1Needed - mobMaterialLv1
+            print(f"Material musuh level 3 kurang sebanyak {mobMaterialLv3Kurang}")
+            print(f"Material musuh level 2 kurang sebanyak {mobMaterialLv2Kurang}")
+            print(f"Material musuh level 1 kurang sebanyak {mobMaterialLv1Kurang}")
             
         
     elif pilihanMenu == 7:
