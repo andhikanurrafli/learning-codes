@@ -1,0 +1,241 @@
+---
+title: "Cyclistic"
+author: "Andhika Nurrafli Putra"
+date: "2024-11-09"
+output: pdf_document
+---
+
+
+## Dataset
+```{r}
+library(tidyverse)
+library(knitr)
+```
+
+Dataset yang saya dapatkan sepenuhnya dari tugas proyek akhir dari Coursera yang terdapat di Link [ini](https://divvy-tripdata.s3.amazonaws.com/index.html), dan saya menggunakan data yang paling terkini yaitu data yang dirilis pada 5 November 2024. Dataset ini saya simpan di directory pribadi saya, dan kemudian saya menggunakan perintah-perintah yang sesuai.
+
+## Menentukan tujuan bisnis
+
+  Dari studi kasus ini *stakeholders* ingin memaksimalkan pengguna keanggotaan tahunan dengan tujuan untuk memastikan kesuksesan perusahaan. Hal ini akan saya cek terlebih dahulu dengan keanggotaan biasa. Lalu kemudian saya analisis lebih lanjut bagaimana efek dari keanggotaan itu.\
+  Di akhir nanti saya juga akan memberikan rekomendasi terhadap data yang sudah dianalisis, dan juga nantinya saya akan memberikan slide tentang data ini.
+  
+  
+## Mengunggah Data
+  Kode dibawah saya gunakan untuk mengunggah data yang sudah saya unduh kemudian saya masukkan ke Rstudio.
+  
+```{r}
+# Memuat data
+
+tripdata <- read.csv("202410-divvy-tripdata.csv")
+
+
+glimpse(tripdata)
+head(tripdata)
+str(tripdata)
+```
+
+## Membersihkan data
+  Selanjutnya adalah melakukan pembersihan data yang mana akan membuat saya lebih mudah untuk melakukan analisis nantinya. Berikut perintah yang saya gunakan.
+  
+```{r}
+# saya akan melakukan pembersihan dengan memfilter data yang bernilai NA di setiap kolom stasiun dengan menggunakan kode
+
+tripdata_cleaned <- tripdata %>% filter(start_station_name != "", 
+                                        start_station_id != "", 
+                                        end_station_name != "", 
+                                        end_station_id != "")
+
+# lalu mengganti nama jenis keanggotaan dari member_casual menjadi tipe keanggotaan
+
+tripdata_cleaned <- tripdata_cleaned %>% rename(membership_type = member_casual)
+
+
+# dan juga ride_id saya akan menggantinya dengan user
+
+tripdata_cleaned <- tripdata_cleaned %>% rename(user = ride_id)
+
+# saya akan menghapus kolom yang tidak relevan untuk analisis nanti
+
+tripdata_cleaned <- tripdata_cleaned %>% select(-start_station_id, -end_station_id, -start_lat,
+                                                -end_lat, -start_lng,
+                                                -end_lng)
+# mengubah jenis string dari chr ke waktu
+
+tripdata_cleaned$started_at <- ymd_hms(tripdata_cleaned$started_at)
+tripdata_cleaned$ended_at <- ymd_hms(tripdata_cleaned$ended_at)
+
+# menambahkan kolom hari 
+
+tripdata_cleaned <- tripdata_cleaned %>% 
+  mutate(Day = weekdays(started_at))
+
+# Menambahkan kolom untuk menentukan jumlah waktu pemakaian setiap user
+
+tripdata_mutate <- tripdata_cleaned %>%
+  mutate(
+    ride_duration_hours = as.numeric(difftime(ended_at, started_at, units = "hours"))
+  )
+
+glimpse(tripdata_cleaned)
+str(tripdata_cleaned)
+head(tripdata_cleaned)
+```
+
+## Analisis data
+ 
+### Menentukan Rata-rata waktu penggunaan setiap tipe keanggotaan
+  Langkah berikutnya adalah analisis data yang bertujuan untuk menjawab dari pentanyaan dan tujuan bisnis yang sudah ditentukan.\
+  Pertama saya akan mencari berapa jumlah rata-rata dari setiap tipe membership, Berikut kodenya.
+
+
+```{r}
+
+
+# melihat bagaimana rata-rata setiap tipe membership
+
+membership_ride_hours_mean <- tripdata_mutate %>% group_by(membership_type) %>% 
+  summarise(mean_ride_duration = mean(ride_duration_hours, na.rm=TRUE))
+
+# kita lihat visualnya
+
+ggplot(membership_ride_hours_mean, aes(x = membership_type, y = mean_ride_duration, fill = membership_type)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  labs(title = "Mean Ride Duration by Membership Type",
+       x = "Membership Type",
+       y = "Mean Ride Duration (hours)") +
+  theme_minimal() +
+  scale_fill_manual(values = c("member" = "skyblue", "casual" = "orange"))
+```
+
+Dari grafik diatas dapat dilihat bahwa keanggotaan kasual lebih banyak menggunakan sepeda dari segi rata-rata penggunaannya.
+
+### Menentukan preferensi dari setiap pengguna menggunakan tipe sepeda
+
+  Pada bagian ini saya akan mencoba mencari tau untuk setiap pengguna mereka lebih memilih untuk menggunakan sepeda tipe apa berdasarkan dari tipe keanggotaan mereka.
+  
+```{r}
+# mengetahui setiap tipe keanggotan lebih memilih sepeda jenis apa
+
+membership_preference <- tripdata_cleaned %>%
+  group_by(membership_type, rideable_type) %>%
+  summarise(count = n(), .groups = "drop")
+
+# melihat visualisasinya
+
+ggplot(membership_preference, aes(x = rideable_type, y = count, fill = membership_type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Rideable Type Preferences by Membership Type",
+       x = "Rideable Type",
+       y = "Number of Rides") +
+  theme_minimal() +
+  scale_fill_manual(values = c("member" = "skyblue", "casual" = "orange"))
+```
+
+Dari grafik tersebuk kita bisa melihat bahwa dari pengguna kasual dan juga keanggotaan tahunan memiliki preferensi yang lebih banyak ke classic_bike. Hal ini terjadi mungkin karena para pengguna yang juga ingin berolahraga sembari menuju ke tujuan.
+
+### Menentukan penggunaan sepeda oleh tiap jenis keanggotaan berdasarkan hari
+
+Saat ini kita akan mencoba menghitung jumlah penggunaan sepeda oleh tiap tipe keanggotaan berdasarkan hari. Hal ini penting karena kita akan memantau setiap harinya tipe keanggotaan mana yang memiliki lebih banyak aktivitas menggunakan sepeda.
+
+```{r}
+# membuat datasetnya
+
+membership_daily_ride <- tripdata_mutate %>% 
+  group_by(Day, membership_type) %>% 
+  summarise(ride_count = n(), .groups = "drop")
+
+# mengurutkan jenis hari
+
+day_levels <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+                "Saturday", "Sunday")
+
+membership_daily_ride <- tripdata_mutate %>% 
+  group_by(Day, membership_type) %>% 
+  summarise(ride_count = n(), .groups = "drop") %>% 
+  mutate(Day = factor(Day, levels = day_levels)) %>% 
+  arrange(Day, membership_type)
+
+# membuat visual
+
+ggplot(membership_daily_ride, aes(x = Day, y = ride_count, fill = membership_type))+
+  geom_bar(stat = "identity", position = "dodge", show.legend = TRUE) +
+  labs(title = "Daily Ride by Membership Type",
+       x = "Day",
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_fill_manual(values = c("member" = "skyblue", "casual" = "orange"))
+```
+
+
+Berdasarkan data yang sudah dianalisis seperti diatas, kita dapat melihat bahwa user yang memiliki keanggotaan tahunan lebih  banyak menggunakan sepeda di hari kerja, sedangkan user casual lebih banyak menggunakan di akhir pekan. Hal ini dapat disebabkan oleh karena user keanggotaan tahunan memilih untuk memiliki keanggotaan karena mereka akan lebih sering menggunakannya untuk kepentingan mobilitas bekerja. Sedangkan untuk user tahunan lebih sering menggunakan pada akhir pekan, dimana kemungkinan mereka menggunakannya untuk melakukan kegiatan akhir pekan seperti liburan dan bersenang-senang.
+
+
+### Menentukan penggunaan sepeda oleh tiap jenis keanggotaan berdasarkan rata-rata Waktu
+
+Selanjutnya akan saya coba untuk membuat sebuah tabel untuk menentukan jenis keanggotaan mana yang paling banyak menggunakan sepeda di setiap harinya.
+
+```{r}
+# membuat datasetnya
+
+membership_daily_time <- tripdata_mutate %>% 
+  group_by(Day, membership_type) %>% 
+  summarise(avg_time = mean(ride_duration_hours), .groups = "drop")
+
+# mengurutkan jenis harinya
+
+membership_daily_time <- tripdata_mutate %>% 
+  group_by(Day, membership_type) %>% 
+  summarise(avg_time = mean(ride_duration_hours), .groups = "drop") %>% 
+  mutate(Day = factor(Day, levels = day_levels)) %>% 
+  arrange(Day, membership_type)
+
+# membuat visualnya
+
+ggplot(membership_daily_time, aes(x = Day, y = avg_time, fill = membership_type))+
+  geom_bar(stat = "identity", position = "dodge", show.legend = TRUE)+
+  labs(title = "Average Daily Ride by Each Membership Type",
+       x = "Day",
+       y = "Average Time (Hours)" ) +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_fill_manual(values = c("member" = "skyblue", "casual" = "orange"))
+```
+
+Hal yang sebelumnya saya tulis terbukti di garis ini, dimana user dengan keanggotaan tahunan cenderung sama rata-rata waktu yang ditempul dibandingkan dengan jenis keanggotaan kasual yang mana dalam hal ini user yang memilih untuk menggunakan keanggotan kasual menggunakannya untuk mobilitas sebagai turis, dan user yang sudah membeli keanggotaan tahunan merupakan orang-orang yang bekerja di kota itu, karena waktu tempuhnya cenderung sama.\
+
+Selanjutnya saya akan mengubah perintah variasi untuk menjadi lebih mudah, berikut kodenya.
+
+```{r}
+# mengubah perintah visualisasi menjadi lebih simpel
+
+average_daily_ride_viz <- ggplot(membership_daily_time, aes(x = Day, y = avg_dist, fill = membership_type))+
+  geom_bar(stat = "identity", position = "dodge", show.legend = TRUE)+
+  labs(title = "Average Daily Ride by Each Membership Type",
+       x = "Day",
+       y = "Average Time (KM)") +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_fill_manual(values = c("member" = "skyblue", "casual" = "orange"))
+
+
+ride_count_viz <- ggplot(membership_daily_ride, aes(x = Day, y = ride_count, fill = membership_type))+
+  geom_bar(stat = "identity", position = "dodge", show.legend = TRUE) +
+  labs(title = "Daily Ride by Membership Type",
+       x = "Day",
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))+
+  scale_fill_manual(values = c("member" = "skyblue", "casual" = "orange"))
+```
+
+Dalam hal ini untuk rekomendasi saya akan menjadi lebih mudah untuk melakukan perintahnya.
+
+## Sebuah rekomendasi
+
+Berdasarkan dari kedua grafik dari hasil analisis terakhir diatas kita dapat mengetahui bahwa:\
+- Pelanggan keanggotaan tahunan cenderung lebih sering memakai sepeda pada hari kerja, walaupun di akhir pekan juga lebih banyak daripada member kasual akan tetapi itu tidak signifikan.\
+- Pelanggan kasual lebih banyak menggunakan sepeda di akhir pekan, dan waktu tempuh rata-rata yang mereka capai lebih jauh daripada pelanggan keanggotaan tahunan.\
+
+Disini kita bisa saja untuk meningkatkan keanggotaan tahunan dengan memberikan promosi dan percobaan-percobaan yang mungkin akan dapat mempengaruhi pengguna kasual berpindah ke keanggotaan tahunan. Dengan meningkatkan fitur-fitur yang bisa diperoleh oleh hanya pengguna tahunan saja atau dengan mengekslusifkannya. Pengguna kasual bisa mencoba fitur itu dan kemudian menciptakan unsur *flexing* di setiap pengguna.
+
