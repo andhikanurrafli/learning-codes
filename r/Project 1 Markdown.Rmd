@@ -1,0 +1,299 @@
+---
+title: 'Markdown Project 1: Bellabeat'
+author: "Andhika Nurrafli Putra"
+date: "2024-11-05"
+output: github_document
+---
+
+
+### Dataset
+```{r setup, include=FALSE}
+library(tidyverse)
+library(knitr)
+```
+
+
+The data I use in this task is: [FitBit Fitness Tracker Data](https://www.kaggle.com/datasets/arashnic/fitbit) (CCO:Public Domain from [Möbius](https://www.kaggle.com/arashnic)). 
+
+
+### **Determining Bellabeat Business Task**
+
+First step of data analyzing is determining the question of the business. Or as we know the Business task.
+In this case Urška Sršen and Sando Mur is establishing a smart product that monitoring health of a person.
+Sršen know that this business has the potential to do more. So we need to focus on the development of Bellabeat.
+In this case I already determine the with:\
+- *What are the usage patterns of Bellabeat smart devices?*\
+- *What we can do to encourage them workout more?*\
+We need to Know how to Improve the usage and broaden our products so people will engage to our product.
+
+### **Preparing the Data**
+
+In this step I want to determine first problem that bellabeat has. 
+First we need to load the data
+
+```{r Importing data}
+
+# importing the data
+
+daily_Activity <- read.csv("dailyActivity_merged.csv")
+heartrate_seconds <- read.csv("heartrate_seconds_merged.csv")
+hourly_Calorires <- read.csv("hourlyCalories_merged.csv")
+hourly_Intensities <- read.csv("hourlyIntensities_merged.csv")
+hourly_Steps <- read.csv("hourlySteps_merged.csv")
+minute_Calories_Narrow <- read.csv("minuteCaloriesNarrow_merged.csv")
+minute_Intensities_Narrow <- read.csv("minuteIntensitiesNarrow_merged.csv")
+minute_METs_Narrow <- read.csv("minuteMETsNarrow_merged.csv")
+minute_sleep <- read.csv("minuteSleep_merged.csv")
+minute_Steps_Narrow <- read.csv("minuteStepsNarrow_merged.csv")
+weight_Log_Info <- read.csv("weightLogInfo_merged.csv")
+
+#take a peek for the data with 
+
+head(daily_Activity)
+glimpse(daily_Activity)
+
+```
+
+### **Cleaning the data**
+
+Cleaning the data helps analysis become easier, this way you can focus on the analysis rather than seeing messy Datasets.
+
+```{r cleaning the data}
+# changing ActivityDate on daily_Activity as date
+
+daily_Activity$ActivityDate <- as.Date(daily_Activity$ActivityDate, 
+                                       format = "%m/%d/%Y")
+
+
+# classifying data by Id, ActivityDate, Total Distance, Tracker Distance and calories
+
+
+combined_activity_data <- daily_Activity %>%
+  group_by(Id, ActivityDate) %>%
+  summarise(
+    TotalSteps = sum(TotalSteps),
+    TotalCalories = sum(Calories),
+    TrackerDistance = sum(TrackerDistance),
+    TotalDistance = sum(TotalDistance),
+    .groups = 'drop'
+  )
+
+# we now need to find the time span of the user's usage
+
+start_date <- min(combined_activity_data$ActivityDate)
+end_date <- max(combined_activity_data$ActivityDate)
+
+end_date - start_date
+
+
+# next we need to determine which day has the most activity each day
+
+combined_activity_data <- combined_activity_data %>% 
+  mutate(DayOfWeek = weekdays(ActivityDate))
+
+# we need to clean it  one more time
+
+combined_activity_dataCLEAN <- combined_activity_data %>%
+  filter(apply(combined_activity_data, 1, function(x) all(!is.na(x) & x != 0 & x !=0.00)))
+
+
+glimpse(combined_activity_data)
+head(combined_activity_data)
+```
+
+### **Analyse and Visualize the data**
+
+#### Looking for engagement in users
+
+After we cleaning the data and put them into one dataset now we can recall to our business task. To find the usage pattern in Bellabeat! Now that we know out business task is, we can code this.
+
+```{r Analyzing the data 1}
+# we are gonna check the average usage of the tracker and which day has the most usage
+
+trackerDistanceMEAN <- combined_activity_dataCLEAN %>% summarize(mean(TrackerDistance))
+
+# we need to know which day has the most activity
+
+ggplot(data = combined_activity_dataCLEAN) + 
+  geom_bar(mapping = aes(x = DayOfWeek, fill = DayOfWeek)) +
+  theme(
+    axis.text.x = 
+          element_text(
+            angle = 35
+            ))
+
+# Ensure 'DayOfWeek' is ordered correctly
+combined_activity_dataCLEAN$DayOfWeek <- factor(
+  combined_activity_dataCLEAN$DayOfWeek, 
+  levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+)
+
+# Create the plot
+ggplot(data = combined_activity_dataCLEAN) + 
+  geom_bar(mapping = aes(x = DayOfWeek, fill = DayOfWeek)) +
+  theme(
+    axis.text.x = element_text(angle = 35, hjust = 1)
+  ) +
+  labs(title = "Activity by Day of the Week", x = "Day of Week", y = "Count")
+
+# We see that saturday is the highest activity
+# to prove that I am gonna put a red line on the visual on tuesday
+# but first I need to create a dataset to count the tuesday activity
+tuesday_count <- combined_activity_dataCLEAN %>%
+  filter(DayOfWeek == "Tuesday") %>%
+  nrow()
+
+# now we plot
+ggplot(data = combined_activity_dataCLEAN) + 
+  geom_bar(mapping = aes(x = DayOfWeek, fill = DayOfWeek)) +
+  geom_hline(yintercept = tuesday_count, color = "red", linetype = "dashed") +
+  theme(
+    axis.text.x = element_text(angle = 35, hjust = 1)
+  ) +
+  labs(title = "Activity by Day of the Week", x = "Day of Week", y = "Count")
+
+# see Saturday is the highest
+
+# now that we know saturday has the most acitivy
+# we are gonna count how many tracker distance that our user have only on saturday
+
+trackerdistanceSATURDAYMEAN <- combined_activity_dataCLEAN %>% filter( DayOfWeek == "Saturday") %>% 
+  summarize(totaltrackerdistance = mean(TrackerDistance))
+
+# now that we know the average miles of trackerdistance in saturday we now compare it to the whole data average
+
+TD_merged <- cbind(trackerDistanceMEAN,trackerdistanceSATURDAYMEAN)
+
+# now we know that saturday really has slightly has higher usage, that means we are gonna leave it and draw a conclusion to make a decision
+
+
+```
+
+Now we know that we can create an engagement to the user on saturday, which is the most active users are on that day. 
+
+#### Increasing Interest in Users
+
+With that information we get, we now can create a code to know how many calories are the users burn during the usage of our device, to nest it on the notification we give on saturday with our marketing team.
+
+```{r Data analyzing 2, warning=FALSE}
+# We need to know first how many total distance compare to the calories burns
+
+combined_activity_dataCAL <- combined_activity_dataCLEAN %>% 
+  mutate(CaloriesPerDistance = TotalCalories / TotalDistance)
+
+# clean them!
+
+combined_activity_dataCALCLEAN <- combined_activity_dataCAL %>%
+  filter(is.finite(CaloriesPerDistance))
+
+# we now analyze the data
+
+daily_trends <- combined_activity_dataCAL %>% 
+  group_by(ActivityDate) %>% 
+  summarize(AverageCaloriesPerDistance = mean(CaloriesPerDistance, na.rm = TRUE))
+
+# wow there is an infinity value in our dataset we need to clean it!
+
+daily_trendsCLEAN <- daily_trends %>%
+  mutate(AverageCaloriesPerDistance = ifelse(is.infinite(
+    AverageCaloriesPerDistance), NA, AverageCaloriesPerDistance))
+
+# now let's try to visualize it
+
+ggplot(daily_trendsCLEAN, aes(x = ActivityDate, y = AverageCaloriesPerDistance)) +
+  geom_line() +
+  labs(title = "Average Calories Burned per Distance by Day",
+       x = "Date",
+       y = "Calories Burned per Distance")
+
+```
+
+#### Individual Calculation
+
+Wow that was the data of all users in the dataset and it is good for our research and development team to know the data. We need to inform our users about their achievement in their products. Let's go
+
+```{r Analyzing data 3}
+# we need to know how much each individual burn their calories so that we can
+# encourage them to do more exercise!
+
+user_avg_calories_per_day <- combined_activity_dataCALCLEAN %>%
+  group_by(Id, ActivityDate) %>%
+  summarize(AverageCaloriesPerDistance = mean(CaloriesPerDistance, 
+                                              na.rm = TRUE))
+# clean them one more time
+user_avg_calories_per_dayCLEAN <- user_avg_calories_per_day %>%
+  filter(!is.nan(AverageCaloriesPerDistance))
+
+# with that much of users i will take 3 of them to visualize the average calories burns by the users
+
+# first I want to group them in 1 dataset
+
+specific_users <- user_avg_calories_per_dayCLEAN %>%
+  filter(Id %in% c(1503960366, 1624580081, 1844505072)) 
+
+# now let's see the visual
+
+ggplot(specific_users, aes(x = ActivityDate, y = AverageCaloriesPerDistance, color = factor(Id))) +
+  geom_line() + 
+  geom_point() + 
+  labs(
+    title = "Average Calories Burned per Distance for 3 Users",
+    x = "Activity Date",
+    y = "Average Calories per Distance",
+    color = "Id"
+  ) +
+  facet_wrap(~Id) +
+  theme(
+    axis.text.x = element_text(angle = 35, hjust = 1) 
+  )
+
+# wow user 1624580081 really have exercise more 
+
+
+```
+
+### **Sharing Session**
+
+Now that we know what we have been analyze I can now do a recomendation for business question that was asked.
+#### Users tends to use Bellabeat product more in Saturday but not in Thursday and Wednesday
+
+We can see that in this graphic
+
+```{r echo=FALSE}
+ggplot(data = combined_activity_dataCLEAN) + 
+  geom_bar(mapping = aes(x = DayOfWeek, fill = DayOfWeek)) +
+  geom_hline(yintercept = tuesday_count, color = "red", linetype = "dashed") +
+  theme(
+    axis.text.x = element_text(angle = 35, hjust = 1)
+  ) +
+  labs(title = "Activity by Day of the Week", x = "Day of Week", y = "Count")
+```
+
+So with the graphic above we know the best day to remind, notified the user is not in wednesday and Thursday, because it has the lowest activity in a week.
+
+
+#### Suggestion for Bellabeat in marketing side
+
+As we already visualize the usage of each users, In that case we can encourage users to exercise more. We have example in this graphic
+
+```{r echo=FALSE}
+ggplot(specific_users, aes(x = ActivityDate, y = AverageCaloriesPerDistance, color = factor(Id))) +
+  geom_line() + 
+  geom_point() + 
+  labs(
+    title = "Average Calories Burned per Distance for 3 Users",
+    x = "Activity Date",
+    y = "Average Calories per Distance",
+    color = "Id"
+  ) +
+  facet_wrap(~Id) +
+  theme(
+    axis.text.x = element_text(angle = 35, hjust = 1) 
+  )
+```
+
+
+### **Closing**
+
+With the conclusion which I have already done, my Analysis in this first case study of mine have finish.\
+Thank you the readers have been reading this.
